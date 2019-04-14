@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 var mongoose = require("mongoose");
 var Site = require("../models/Site.js");
+var axios = require("axios");
 
 /* GET ALL SITES */
 router.get("/", function(req, res, next) {
@@ -19,12 +20,46 @@ router.get("/:id", function(req, res, next) {
   });
 });
 
-/* SAVE SITE */
-router.post("/", function(req, res, next) {
-  Site.create(req.body, function(err, post) {
+/* PINGS SINGLE SITE BY ID */
+router.get("/ping/:id", function(req, res, next) {
+  Site.findById(req.params.id, function(err, site) {
     if (err) return next(err);
-    res.json(post);
+    axios
+      .get(adress)
+      .then(res => {
+        console.log(res.data);
+      })
+      .catch(error => {
+        site.data.push({
+          date: new Date().toString(),
+          message: `${error}`
+        });
+        site.status = false;
+        site.save();
+        /*
+        if (error.response) {
+          console.log(error.response.status);
+        }*/
+      });
+
+    res.json(site);
   });
+});
+
+/* SAVE SITE */
+router.post("/create/", function(req, res, next) {
+  Site.create(
+    {
+      siteName: req.body.siteName,
+      siteUrl: req.body.siteUrl,
+      status: true,
+      data: []
+    },
+    function(err, post) {
+      if (err) return next(err);
+      res.json(post);
+    }
+  );
 });
 
 /* UPDATE SITE */
