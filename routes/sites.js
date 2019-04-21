@@ -8,15 +8,21 @@ var axios = require("axios");
 router.get("/", function(req, res, next) {
   Site.find(function(err, sites) {
     if (err) return next(err);
+    sites.forEach(site => {
+      getInterval(site);
+      site.save();
+    });
     res.json(sites);
   });
 });
 
 /* GET SINGLE SITE BY ID */
 router.get("/:id", function(req, res, next) {
-  Site.findById(req.params.id, function(err, post) {
+  Site.findById(req.params.id, function(err, site) {
     if (err) return next(err);
-    res.json(post);
+    getInterval(site);
+    site.save();
+    res.json(site);
   });
 });
 
@@ -24,24 +30,7 @@ router.get("/:id", function(req, res, next) {
 router.get("/ping/:id", function(req, res, next) {
   Site.findById(req.params.id, function(err, site) {
     if (err) return next(err);
-    axios
-      .get(adress)
-      .then(res => {
-        console.log(res.data);
-      })
-      .catch(error => {
-        site.data.push({
-          date: new Date().toString(),
-          message: `${error}`
-        });
-        site.status = false;
-        site.save();
-        /*
-        if (error.response) {
-          console.log(error.response.status);
-        }*/
-      });
-
+    ping(site.siteUrl, site);
     res.json(site);
   });
 });
@@ -52,7 +41,10 @@ router.post("/create/", function(req, res, next) {
     {
       siteName: req.body.siteName,
       siteUrl: req.body.siteUrl,
+      siteDesc: req.body.siteDesc,
       status: true,
+      latest: parseDate(new Date()),
+      timeToPing: "∞",
       data: []
     },
     function(err, post) {
@@ -77,5 +69,83 @@ router.delete("/:id", function(req, res, next) {
     res.json(post);
   });
 });
+
+function ping(adress, site) {
+  axios
+    .get(adress)
+    .then(res => {
+      console.log(res.data);
+    })
+    .then(() => {
+      let newdate = parseDate(new Date());
+      site.data.push({
+        date: formatDate(newdate),
+        message: `Back-end up and running!`,
+        up: true
+      });
+      site.status = true;
+      site.latest = newdate;
+      getInterval(site);
+      site.save();
+    })
+    .catch(error => {
+      let newdate = parseDate(new Date());
+      site.data.push({
+        date: formatDate(newdate),
+        message: `${error}`,
+        up: false
+      });
+      site.status = false;
+      site.latest = newdate;
+      getInterval(site);
+      site.save();
+    });
+}
+
+// Takes a Date() oject, returns following table : [min, hour, day, month, year]
+function parseDate(date) {
+  let dateArray = [];
+  dateArray.push(date.getMinutes());
+  dateArray.push(date.getHours());
+  dateArray.push(date.getDate());
+  dateArray.push(date.getMonth() + 1);
+  dateArray.push(date.getFullYear());
+  return dateArray;
+}
+
+function formatDate(dateArray) {
+  let formattedDate = "";
+  formattedDate += `${dateArray[1]}h${dateArray[0]}min - ${dateArray[2]}/${
+    dateArray[3]
+  }/${dateArray[4]}`;
+  return formattedDate;
+}
+
+function getInterval(site) {
+  const newDate = parseDate(new Date());
+  let timeInterval = "";
+  const older = site.latest;
+  if (older.length === 0) {
+    return 0;
+  }
+  if (older[3] !== newDate[3]) {
+    timeInterval = `${newDate[3] - older[3]} month(s)`;
+  } else {
+    if (older[2] !== newDate[2]) {
+      timeInterval = `${newDate[2] - older[2]} day(s)`;
+    } else {
+      if (older[1] !== newDate[1]) {
+        timeInterval = `${newDate[1] - older[1]} hour(s)`;
+      } else {
+        if (older[0] !== newDate[0]) {
+          timeInterval = `${newDate[0] - older[0]} minutes(s)`;
+        } else {
+          timeInterval = "0 minutes";
+        }
+      }
+    }
+  }
+  site.timeToPing = timeInterval;
+}
 
 module.exports = router;
