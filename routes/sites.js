@@ -27,11 +27,19 @@ router.get("/:id", function(req, res, next) {
 });
 
 /* PINGS SINGLE SITE BY ID */
-router.get("/ping/:id", function(req, res, next) {
-  Site.findById(req.params.id, function(err, site) {
+router.get("/ping/:id", async function(req, res, next) {
+  const site = await Site.findById(req.params.id);
+  if (!site) next("Gna");
+  await ping(site);
+  res.json(site);
+});
+
+/* PINGS ALL SITES */
+router.get("/pingall/", function(req, res, next) {
+  Site.find(function(err, sites) {
     if (err) return next(err);
-    ping(site.siteUrl, site);
-    res.json(site);
+    sites.forEach(async site => await ping(site));
+    res.json(sites);
   });
 });
 
@@ -70,19 +78,17 @@ router.delete("/:id", function(req, res, next) {
   });
 });
 
-function ping(adress, site) {
+function ping(site) {
   axios
-    .get(adress)
+    .get(site.siteUrl)
     .then(res => {
-      console.log(res.data);
-    })
-    .then(() => {
       let newdate = parseDate(new Date());
       site.data.push({
         date: formatDate(newdate),
         message: `Back-end up and running!`,
         up: true
       });
+      site.latestResp = res.data;
       site.status = true;
       site.latest = newdate;
       getInterval(site);
@@ -90,6 +96,7 @@ function ping(adress, site) {
     })
     .catch(error => {
       let newdate = parseDate(new Date());
+      site.latestResp = error;
       site.data.push({
         date: formatDate(newdate),
         message: `${error}`,

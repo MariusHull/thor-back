@@ -7,7 +7,8 @@ var SiteSchema = new mongoose.Schema({
   status: Boolean,
   latest: [Number],
   timeToPing: String,
-  data: [{ date: String, message: String, up: Boolean }]
+  data: [{ date: String, message: String, up: Boolean }],
+  latestRep: Object
 });
 
 module.exports = mongoose.model("Site", SiteSchema);
