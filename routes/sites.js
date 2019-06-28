@@ -17,7 +17,7 @@ router.get("/", function(req, res, next) {
 });
 
 /* GET SINGLE SITE BY ID */
-router.get("/:id", function(req, res, next) {
+router.get("/recover/:id", function(req, res, next) {
   Site.findById(req.params.id, function(err, site) {
     if (err) return next(err);
     getInterval(site);
