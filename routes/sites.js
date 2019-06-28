@@ -35,7 +35,7 @@ router.get("/ping/:id", async function(req, res, next) {
 });
 
 /* PINGS ALL SITES */
-router.get("/pingall/", function(req, res, next) {
+router.get("/pingall", function(req, res, next) {
   Site.find(function(err, sites) {
     if (err) return next(err);
     sites.forEach(site => {
