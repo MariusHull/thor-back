@@ -5,8 +5,8 @@ var Site = require("../models/Site.js");
 var axios = require("axios");
 
 /* GET ALL SITES */
-router.get("/", function(req, res, next) {
-  Site.find(function(err, sites) {
+router.get("/", async function(req, res, next) {
+  sites = await Site.find(function(err, sites) {
     if (err) return next(err);
     sites.forEach(site => {
       getInterval(site);
