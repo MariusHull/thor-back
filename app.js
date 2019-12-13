@@ -11,8 +11,9 @@ var usersRouter = require("./routes/users");
 var sites = require("./routes/sites");
 
 mongoose
-  .connect("mongodb://localhost/product")
-  .then(() => console.log("connection succesful"))
+.connect("mongodb+srv://moniUser:moniMoney@monithor-b5vvj.mongodb.net/test?retryWrites=true&w=majority")
+// .connect("mongodb://localhost/product")
+.then(() => console.log("connection succesful"))
   .catch(err => console.error(err));
 
 var app = express();
